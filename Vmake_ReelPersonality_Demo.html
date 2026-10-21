@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What’s your Reel personality? (concept demo)</title>
+<style>
+  :root {
+    --bg: #F6EAF2;
+    --ink: #2A1630;
+    --muted: #5E4A63;
+    --pink: #D81B55;
+    --pink-deep: #9E1243;
+    --amber: #FFC857;
+    --plum: #4A1B3E;
+    --panel: #FFFFFF;
+    --line: #E4D0DE;
+    --radius: 18px;
+    --display: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body { margin: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); background: var(--bg); color: var(--ink); font-family: var(--body); line-height: 1.5; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 56px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.08; margin: 0; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  button { font: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; border-radius: 8px; }
+
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 28px; font-size: 14px; color: var(--muted); }
+  .tag { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .btn { border: 0; border-radius: 14px; padding: 14px 22px; font-weight: 700; font-size: 17px; min-height: 48px; }
+  .btn-primary { background: var(--pink); color: #fff; }
+  .btn-primary:hover { background: var(--pink-deep); }
+  .btn-ghost { background: #fff; color: var(--ink); border: 2px solid var(--ink); }
+  .btn-ghost:hover { background: var(--ink); color: #fff; }
+  .btn-quiet { background: transparent; color: var(--muted); text-decoration: underline; padding: 10px 6px; min-height: 44px; font-size: 15px; }
+
+  /* Intro */
+  .intro { display: grid; gap: 36px; align-items: center; grid-template-columns: 1fr; padding-top: 8px; }
+  .intro h1 { font-size: clamp(40px, 8vw, 76px); font-weight: 800; max-width: 11ch; }
+  .intro p.lead { font-size: 20px; color: var(--muted); max-width: 34ch; margin: 18px 0 26px; }
+  .fine { font-size: 14px; color: var(--muted); margin-top: 18px; max-width: 46ch; }
+  .peek { --w: min(168px, 31vw); display: flex; justify-content: center; align-items: flex-start; padding: 16px 12px 28px; }
+  .peek svg { width: var(--w); height: auto; display: block; flex: none; }
+  .peek svg + svg { margin-left: calc(var(--w) * -0.36); }
+  .peek svg:nth-child(1) { transform: rotate(-7deg); margin-top: 18px; }
+  .peek svg:nth-child(2) { transform: rotate(3deg); position: relative; z-index: 1; margin-top: 40px; }
+  .peek svg:nth-child(3) { transform: rotate(10deg); margin-top: 10px; }
+  @media (min-width: 860px) { .intro { grid-template-columns: 1.1fr 1fr; } }
+
+  /* Quiz */
+  .quiz { max-width: 640px; margin: 0; }
+  .prog { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; font-size: 15px; color: var(--muted); }
+  .prog .track { flex: 1; height: 8px; background: #E9D3E2; border-radius: 99px; overflow: hidden; }
+  .prog .fill { height: 100%; background: var(--pink); border-radius: 99px; transition: width .25s ease; }
+  .quiz h2 { font-size: clamp(28px, 5.5vw, 40px); font-weight: 800; margin-bottom: 22px; }
+  .opts { display: grid; gap: 12px; }
+  .opt { text-align: left; background: #fff; border: 2px solid var(--line); border-radius: var(--radius); padding: 16px 18px; font-size: 18px; color: var(--ink); min-height: 56px; }
+  .opt:hover { border-color: var(--pink); }
+  .opt:active { transform: scale(.99); }
+
+  /* Result */
+  .result { display: grid; gap: 32px; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 860px) { .result { grid-template-columns: 330px 1fr; gap: 48px; } }
+  .cardwrap { display: grid; justify-items: center; gap: 14px; }
+  .cardwrap svg { width: min(330px, 100%); height: auto; display: block; border-radius: 28px; box-shadow: 0 18px 40px rgba(74, 27, 62, .28); }
+  .reveal { animation: reveal .7s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 100%; }
+  @keyframes reveal { from { opacity: 0; transform: rotate(-6deg) translateY(28px) scale(.94); } to { opacity: 1; transform: none; } }
+  .hint { font-size: 14px; color: var(--muted); text-align: center; max-width: 30ch; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .side { display: grid; gap: 22px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .panel h3 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+  .panel .sub { color: var(--muted); font-size: 16px; margin-bottom: 14px; }
+  .pts { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pts strong { font-family: var(--display); font-size: 44px; font-weight: 800; color: var(--pink); line-height: 1; }
+  .meter { height: 12px; background: #F0DDE9; border-radius: 99px; overflow: hidden; margin: 14px 0 8px; }
+  .meter i { display: block; height: 100%; background: var(--amber); border-radius: 99px; transition: width .35s ease; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .badge { display: none; margin-top: 14px; background: var(--plum); color: #fff; border-radius: 12px; padding: 10px 14px; font-weight: 700; }
+  .badge.on { display: inline-block; }
+  .orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .order { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: #fff; }
+  .order.locked { background: #F6EEF3; color: #7A6580; }
+  .order .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--pink); color: #fff; flex: none; }
+  .order.locked .dot { background: #D9C6D3; }
+  .order b { display: block; font-size: 17px; }
+  .order span { font-size: 14px; }
+  .shots { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 8px; font-size: 17px; }
+  .fb[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .ov { display: none; position: fixed; inset: 0; background: rgba(42, 22, 48, .78); z-index: 20; align-items: center; justify-content: center; padding: 16px; }
+  .ov.on { display: flex; }
+  .ovbox { background: #fff; border-radius: 20px; padding: 18px; max-width: 420px; width: 100%; max-height: 94vh; overflow: auto; text-align: center; display: grid; gap: 12px; }
+  .ovbox img { max-width: 100%; max-height: 56vh; margin: 0 auto; border-radius: 16px; display: block; }
+  .ovbox a.btn { display: inline-block; text-decoration: none; }
+  .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .25s ease; max-width: 90vw; text-align: center; z-index: 10; }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  footer { margin-top: 40px; font-size: 14px; color: var(--muted); max-width: 70ch; }
+  @media (prefers-reduced-motion: reduce) { .reveal { animation: none; } .prog .fill, .meter i, .toast { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="bar">
+    <span class="tag">Concept demo for a Vmake campaign idea</span>
+    <span id="pointsMini" aria-live="polite"></span>
+  </div>
+
+  <section id="intro" class="screen active" aria-labelledby="introTitle">
+    <div class="intro">
+      <div>
+        <h1 id="introTitle">What’s your Reel personality?</h1>
+        <p class="lead">Five questions, about a minute. You get your type, a video recipe made for your kind of business, and a card made to post.</p>
+        <button class="btn btn-primary" id="startBtn">Start the quiz</button>
+        <p class="fine">Made for owners who film between customers. It’s a playful quiz, not a scientific test.</p>
+      </div>
+      <div class="peek" id="peek" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <section id="role" class="screen" aria-labelledby="roleTitle">
+    <div class="quiz">
+      <h2 id="roleTitle" style="margin-bottom:8px">What do you run?</h2>
+      <p class="sub" style="color:var(--muted);font-size:18px;margin-bottom:22px">Your questions and your video recipe will fit it. You can change this later.</p>
+      <div class="opts" id="roles"></div>
+    </div>
+  </section>
+
+  <section id="quiz" class="screen" aria-live="polite">
+    <div class="quiz">
+      <div class="prog"><span id="progText">Question 1 of 5</span><div class="track"><div class="fill" id="progFill"></div></div></div>
+      <h2 id="qText"></h2>
+      <div class="opts" id="opts"></div>
+    </div>
+  </section>
+
+  <section id="result" class="screen" aria-label="Your result">
+    <div class="result">
+      <div class="cardwrap">
+        <div id="cardHost"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="storyBtn">Add to Story</button>
+          <button class="btn btn-ghost" id="shareBtn">Share card</button>
+          <button class="btn btn-ghost" id="dlBtn">Save as image</button>
+        </div>
+        <p class="hint">Tip: add a link sticker to your story so friends can take the quiz too.</p>
+        <button class="btn btn-quiet" id="retakeBtn">Retake with new questions</button>
+        <button class="btn btn-quiet" id="roleBtn">Change what I run</button>
+      </div>
+      <div class="side">
+        <div class="panel">
+          <h3>Your points</h3>
+          <p class="sub">Every real, public post tagged #VmakeXmeitu earns a point. Every five points unlock another Order. At ten points you also get a free 7-day Pro trial.</p>
+          <div class="pts"><strong id="ptsNum">0</strong><span id="ptsNote"></span></div>
+          <div class="meter" aria-hidden="true"><i id="meterFill"></i></div>
+          <p id="meterText" class="sub" style="margin:0"></p>
+          <div class="row">
+            <button class="btn btn-ghost" id="friendBtn">Demo only: a friend I invited made their first video (+3)</button>
+            <button class="btn btn-quiet" id="resetBtn">Reset points</button>
+          </div>
+          <span class="badge" id="badge">Ten points reached: status badge and a free 7-day Pro trial (our proposal). The trial ends by itself; upgrading is optional.</span>
+          <p class="fine" style="margin-top:14px">Points reward posting, not praise. Say what you really think, and mark the post as a partnership if the platform asks. In this demo, every share earns a point. In the real plan, it would be one point a day at most.</p>
+        </div>
+        <div class="panel">
+          <h3>Your Orders</h3>
+          <p class="sub">An Order is a ready-made video recipe. Your first one comes with your result.</p>
+          <ul class="orders" id="orders"></ul>
+          <div class="row"><button class="btn btn-ghost" id="proBtn">Upgrade to Pro (concept)</button></div>
+        </div>
+        <div class="panel">
+          <h3>Your next move</h3>
+          <p class="sub" id="insightStrong" style="margin-bottom:6px"></p>
+          <p class="sub" id="insightTip"></p>
+          <h3 id="shotsTitle" style="font-size:20px;margin-top:6px">Your first video</h3>
+          <p class="sub" id="shotsSub" style="margin-bottom:4px"></p>
+          <ol class="shots" id="shots"></ol>
+        </div>
+        <div class="panel">
+          <h3>Does this sound like you?</h3>
+          <p class="sub">Your answer helps tune the quiz. It stays on this device.</p>
+          <div class="row" style="margin-top:0">
+            <button class="btn btn-ghost fb" data-v="yes">Yes</button>
+            <button class="btn btn-ghost fb" data-v="mostly">Mostly</button>
+            <button class="btn btn-ghost fb" data-v="no">Not really</button>
+          </div>
+          <p class="sub" id="fbOut" style="margin:14px 0 0"></p>
+          <div class="row" id="fbRow" style="display:none">
+            <button class="btn btn-quiet" id="fbCopy">Copy a summary for my notes</button>
+            <button class="btn btn-quiet" id="fbClear">Clear the tally</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>This is a mock-up built to show a campaign idea. It is not an official Vmake product. The hashtag, the points and the perks are our proposal, and the points here count every tap so you can try the idea. In a real pilot, only real tagged posts would count.</footer>
+</main>
+<div class="ov" id="ov" role="dialog" aria-modal="true" aria-label="Your image">
+  <div class="ovbox">
+    <p id="ovMsg"></p>
+    <img id="ovImg" alt="Your result card as an image">
+    <div class="actions"><a class="btn btn-ghost" id="ovSave" href="#">Download</a><button class="btn btn-primary" id="ovClose" type="button">Done</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function () {
+  "use strict";
+  var PINK = "#D81B55", INK = "#1B1420", AMBER = "#FFC857", SKIN = "#F6C9A8", CREAM = "#FBF6F1";
+
+  /* ---- Six types. Hook line is shared; the middle beat depends on what the person runs. ---- */
+  var TYPES = {
+    S: { name: "The Storyteller", tag: "You sell with the story behind it.", shirt: "#D81B55", order: "Day in the Life", sample: [78, 95, 60],
+         hook: "Say what today is about.",
+         mid: { coach: "Show three real moments from a client’s week, with permission.", seller: "Show how the product came to be, in three moments.", other: "Show three real moments from your day." },
+         glyph: '<path d="M-9 -7 h18 a2 2 0 0 1 2 2 v9 a2 2 0 0 1 -2 2 h-9 l-5 4 v-4 h-4 a2 2 0 0 1 -2 -2 v-9 a2 2 0 0 1 2 -2z" fill="' + INK + '"/>' },
+    D: { name: "The Demo Master", tag: "You let the product do the talking.", shirt: "#2A9D8F", order: "Show and Sell", sample: [85, 55, 70],
+         hook: "Open on your single best shot, with one bold line.",
+         mid: { coach: "Show your best two moves up close, then the result.", seller: "Two close-ups of what makes it good, then it in use.", other: "Two close-ups of what makes it good." },
+         glyph: '<path d="M-9 -3 L0 -8 L9 -3 L9 6 L0 11 L-9 6Z" fill="' + INK + '"/><path d="M-9 -3 L0 2 L9 -3 M0 2 V11" stroke="' + AMBER + '" stroke-width="1.6" fill="none"/>' },
+    H: { name: "The Hype Machine", tag: "You make every day feel like a launch.", shirt: "#7B5EA7", order: "Drop Day", sample: [95, 70, 88],
+         hook: "Say “It’s here” with your biggest energy.",
+         mid: { coach: "Show the new class, the room, and one big moment.", seller: "Show the new item from three angles.", other: "Show the new thing from three angles." },
+         glyph: '<path d="M-9 -3 H-4 L6 -9 V9 L-4 3 H-9Z" fill="' + INK + '"/><path d="M-7 3 L-5 10" stroke="' + INK + '" stroke-width="3" stroke-linecap="round"/>' },
+    T: { name: "The Teacher", tag: "You turn what you know into tips.", shirt: "#F2B84B", order: "30-Second Tip", sample: [72, 66, 80],
+         hook: "Name a problem your customers have.",
+         mid: { coach: "Show one form fix in one step.", seller: "Show how to use it in one step.", other: "Show the fix in one step." },
+         glyph: '<circle cx="0" cy="-2" r="7" fill="' + INK + '"/><rect x="-3" y="6" width="6" height="3" rx="1" fill="' + INK + '"/><rect x="-2" y="10" width="4" height="2" rx="1" fill="' + INK + '"/>' },
+    B: { name: "The Behind-the-Scenes Nerd", tag: "You show the real work, mess and all.", shirt: "#1B1420", order: "Made by Hand", sample: [60, 88, 72],
+         hook: "Start in the middle of the work.",
+         mid: { coach: "Show the prep, the setup, and the last minute before class.", seller: "Three quick shots of making or packing the order.", other: "Three quick shots of the making." },
+         glyph: '<rect x="-9" y="-2" width="18" height="12" rx="2" fill="' + INK + '"/><path d="M-10 -9 L10 -9 L10 -3 L-10 -3Z" fill="' + INK + '"/><path d="M-4 -9 L-7 -3 M2 -9 L-1 -3 M8 -9 L5 -3" stroke="' + AMBER + '" stroke-width="2"/>' },
+    C: { name: "The Comedian", tag: "You win people over with a laugh.", shirt: "#FF7A9E", order: "Reply Sketch", sample: [82, 92, 85],
+         hook: "Read a real comment out loud.",
+         mid: { coach: "Act out the most relatable moment from class.", seller: "Act out the problem your product solves.", other: "Act out your answer with a twist." },
+         glyph: '<circle r="9" fill="' + INK + '"/><circle cx="-3" cy="-2" r="1.6" fill="' + AMBER + '"/><circle cx="3" cy="-2" r="1.6" fill="' + AMBER + '"/><path d="M-4 3 Q0 7 4 3" stroke="' + AMBER + '" stroke-width="1.8" fill="none" stroke-linecap="round"/>' }
+  };
+  var ORDER_KEYS = ["S", "D", "H", "T", "B", "C"];
+
+  var ROLES = {
+    coach: { label: "Fitness or wellness coaching", desc: "Classes, training, studios, wellness", close: "Invite them to book the next class." },
+    seller: { label: "An online shop", desc: "Etsy, Shopify, TikTok Shop, handmade goods", close: "Point to the product link and the next step." },
+    other: { label: "A local business", desc: "Café, salon, studio, shop, anything with a door", close: "Say where to find you and when you’re open." }
+  };
+
+  /* ---- Question pools. Option = [type, text, hook, heart, speed]; the three numbers (0 to 2) feed the bars. ---- */
+  var POOLS = {
+    general: [
+      { q: "You have 30 seconds and one shot. You pick…", o: [["D", "One close-up, no talking.", 2, 0, 2], ["C", "A joke with a punchline.", 2, 1, 2], ["S", "A heartfelt thank-you.", 0, 2, 1], ["T", "One quick tip.", 1, 1, 2]] },
+      { q: "Which caption sounds most like you?", o: [["H", "“Drop day. Don’t miss it.”", 2, 0, 2], ["T", "“Three things I wish I’d known.”", 1, 1, 1], ["C", "“Nobody: … Me at 8 a.m.:”", 2, 1, 2], ["D", "“Here’s exactly what you get.”", 1, 0, 1]] },
+      { q: "Your best post ever was probably…", o: [["S", "A personal story.", 0, 2, 0], ["H", "A big announcement.", 2, 0, 1], ["T", "A how-to.", 1, 1, 1], ["B", "A behind-the-scenes day.", 0, 2, 1]] },
+      { q: "Before you post, you usually…", o: [["H", "Film it once and send it.", 1, 0, 2], ["D", "Check the lighting and the angle.", 1, 0, 0], ["S", "Write the caption first, then film.", 0, 2, 0], ["B", "Post whatever the day gave you.", 0, 1, 2]] },
+      { q: "When a video flops, you…", o: [["C", "Laugh and make a sequel.", 2, 1, 2], ["T", "Work out what to teach next time.", 1, 1, 1], ["D", "Re-shoot it with better shots.", 1, 0, 0], ["S", "Tell people what you learned.", 0, 2, 1]] }
+    ],
+    coach: [
+      { q: "A client just hit a personal best. You…", o: [["S", "Tell the story of how far they’ve come.", 0, 2, 1], ["H", "Celebrate loudly on camera.", 2, 1, 2], ["T", "Break down what they did differently.", 1, 1, 1], ["B", "Film the last, sweaty rep.", 1, 2, 2]] },
+      { q: "Class ends and the room empties. You film…", o: [["B", "The mat folding and wiping down.", 0, 1, 2], ["D", "The space looking its best.", 1, 0, 0], ["T", "One move people get wrong.", 1, 0, 2], ["C", "A joke about the playlist.", 2, 1, 2]] },
+      { q: "A new client asks, “Where do I even start?” You…", o: [["T", "Show a three-step beginner routine.", 1, 1, 1], ["S", "Share your own first-day story.", 0, 2, 0], ["H", "Invite them to the next class, loudly.", 2, 0, 2], ["D", "Show the gear you’d actually buy.", 1, 0, 1]] },
+      { q: "It’s January and everyone is signing up. Your post is…", o: [["H", "“New year, new class. Doors open now.”", 2, 0, 2], ["S", "Why you started coaching.", 0, 2, 0], ["T", "Five mistakes new members make.", 2, 0, 1], ["C", "The January crowd, affectionately roasted.", 2, 1, 2]] },
+      { q: "You launch a new class. Your video starts with…", o: [["D", "A clean shot of the studio.", 0, 0, 1], ["H", "“It’s here,” straight to camera.", 2, 0, 2], ["S", "The reason you built it.", 0, 2, 0], ["B", "The planning notebook, messy pages and all.", 1, 2, 1]] },
+      { q: "Your best-performing clip would show…", o: [["T", "A form fix in 20 seconds.", 2, 0, 2], ["S", "A client’s before and after, with permission.", 1, 2, 0], ["C", "You failing a balance pose.", 2, 2, 2], ["B", "Your 5 a.m. prep.", 1, 2, 1]] },
+      { q: "Between two clients you have three minutes. You…", o: [["C", "Film a quick bit and post it.", 2, 1, 2], ["T", "Record one tip to camera.", 1, 1, 2], ["B", "Film the schedule chaos.", 1, 1, 2], ["S", "Jot down a story for later.", 0, 2, 0]] },
+      { q: "A client asks you to film their form. You…", o: [["T", "Add arrows and a quick explanation.", 1, 1, 1], ["D", "Film from the best angle, no talking.", 1, 0, 1], ["B", "Film the whole messy attempt.", 0, 2, 2], ["H", "Turn it into a challenge.", 2, 1, 1]] },
+      { q: "Your studio has a quiet week. You post…", o: [["H", "A flash offer with a deadline.", 2, 0, 2], ["S", "A thank-you to your regulars.", 0, 2, 1], ["D", "A tour of the space.", 1, 0, 0], ["C", "A joke about the empty room.", 2, 1, 2]] },
+      { q: "A member shares a win in the group chat. You…", o: [["S", "Ask if you can tell their story.", 0, 2, 0], ["B", "Film the cheering when they walk in.", 0, 2, 2], ["H", "Post the news right now.", 2, 1, 2], ["T", "Turn it into a tip for everyone.", 1, 1, 1]] }
+    ],
+    seller: [
+      { q: "A new product arrives. You film…", o: [["D", "Close-ups of every detail.", 1, 0, 0], ["H", "The unboxing, with full energy.", 2, 0, 2], ["B", "The mess of unpacking the boxes.", 0, 1, 2], ["S", "Why you chose it.", 0, 2, 0]] },
+      { q: "You’re packing orders tonight. You…", o: [["B", "Film the pile of parcels.", 0, 1, 2], ["C", "Narrate it like a nature documentary.", 2, 1, 2], ["S", "Thank each customer by name.", 0, 2, 1], ["T", "Show how you pack so nothing breaks.", 1, 1, 1]] },
+      { q: "A customer asks, “Does this really work?” You…", o: [["D", "Demo it on camera.", 2, 0, 1], ["T", "Explain who it’s for and who it’s not.", 1, 1, 1], ["C", "Reenact the problem it solves.", 2, 1, 1], ["S", "Share what happened the first time you tried it.", 0, 2, 0]] },
+      { q: "Your product page needs a video. You start with…", o: [["D", "A hand holding the product.", 2, 0, 1], ["S", "The story of how it started.", 0, 2, 0], ["H", "“You need this.” One bold line.", 2, 0, 2], ["T", "Three reasons it’s worth it.", 1, 0, 1]] },
+      { q: "It’s sale week. Your post says…", o: [["H", "“48 hours only. Go!”", 2, 0, 2], ["T", "How to pick the right one.", 1, 1, 1], ["C", "A joke about your wallet.", 2, 1, 2], ["D", "The best deal, up close.", 1, 0, 1]] },
+      { q: "A five-star review comes in. You…", o: [["S", "Read it out and say thank you.", 0, 2, 1], ["D", "Film the product it mentions.", 1, 0, 1], ["C", "Do a happy dance on camera.", 2, 2, 2], ["H", "Post it before lunch.", 1, 0, 2]] },
+      { q: "You make things by hand. People most want to see…", o: [["B", "The whole process, every step.", 0, 2, 1], ["D", "The finished piece, spinning slowly.", 1, 0, 0], ["T", "One trick of the craft.", 1, 1, 1], ["S", "Who it was made for.", 0, 2, 0]] },
+      { q: "Shipping is delayed by a day. You tell people…", o: [["C", "With a dramatic video apology.", 2, 2, 2], ["S", "Honestly, in a short story.", 0, 2, 1], ["T", "What to expect and when.", 1, 0, 2], ["B", "By showing the pile of orders.", 0, 1, 2]] },
+      { q: "You’re restocking a bestseller. Your teaser is…", o: [["H", "“It’s back,” and a countdown.", 2, 0, 2], ["D", "One slow shot of the shelf.", 1, 0, 0], ["S", "How many of you asked for it.", 0, 2, 1], ["C", "A fake press conference.", 2, 1, 1]] },
+      { q: "You have one product shot ready and ten minutes. You…", o: [["D", "Film it from three angles.", 1, 0, 1], ["H", "Post it with a bold line.", 2, 0, 2], ["B", "Film the cluttered desk too.", 0, 1, 2], ["T", "Add a quick how-to-use.", 1, 1, 2]] }
+    ],
+    other: [
+      { q: "Doors open in five minutes. You film…", o: [["B", "The last-minute rush.", 0, 1, 2], ["D", "The counter looking perfect.", 1, 0, 0], ["H", "“We’re open!” at full volume.", 2, 0, 2], ["S", "Why you opened this place.", 0, 2, 0]] },
+      { q: "A regular walks in. You…", o: [["S", "Ask if you can tell their story.", 0, 2, 0], ["C", "Greet them with a running joke.", 2, 1, 2], ["T", "Show them something new on the menu.", 1, 0, 1], ["B", "Film their usual order being made.", 0, 1, 2]] },
+      { q: "You add something new. You show it with…", o: [["D", "A slow close-up.", 1, 0, 0], ["H", "A countdown to the launch.", 2, 0, 2], ["T", "How it’s made, in 30 seconds.", 1, 1, 1], ["C", "A dramatic taste test.", 2, 1, 2]] },
+      { q: "It’s a slow Tuesday afternoon. You post…", o: [["C", "A joke about the quiet.", 2, 1, 2], ["S", "A thank-you to the neighborhood.", 0, 2, 1], ["H", "A flash offer for the next hour.", 2, 0, 2], ["B", "What you do when nobody’s in.", 0, 1, 2]] },
+      { q: "A customer asks how it’s done. You…", o: [["T", "Teach them in 30 seconds.", 1, 1, 2], ["B", "Show the whole process, mess and all.", 0, 2, 1], ["C", "Act it out dramatically.", 2, 1, 1], ["S", "Tell where the idea came from.", 0, 2, 0]] },
+      { q: "Your team did something great. You…", o: [["S", "Tell the story behind it.", 0, 2, 0], ["H", "Announce it right now.", 2, 1, 2], ["B", "Film the celebration.", 0, 2, 2], ["D", "Show the result up close.", 1, 0, 0]] },
+      { q: "You want new people to find you. You film…", o: [["D", "The best-looking thing you sell.", 2, 0, 1], ["T", "A tip about what you do.", 1, 1, 1], ["H", "A deal with a deadline.", 2, 0, 2], ["C", "A skit about your customers.", 2, 1, 1]] },
+      { q: "A supplier delivers something surprising. You…", o: [["B", "Open it live and see.", 1, 1, 2], ["C", "React with way too much drama.", 2, 1, 2], ["T", "Explain how you’ll use it.", 1, 1, 1], ["S", "Tell how you found the supplier.", 0, 2, 0]] },
+      { q: "End of the day, you’re tired. You post…", o: [["B", "The closing routine.", 0, 1, 2], ["S", "One good moment from the day.", 0, 2, 1], ["D", "A photo-perfect shot of the place.", 1, 0, 0], ["C", "“Today, in 10 seconds,” a recap joke.", 2, 1, 2]] },
+      { q: "Someone asks, “Why should I come to you?” You…", o: [["S", "Tell your story.", 0, 2, 0], ["D", "Show what makes it good.", 2, 0, 1], ["T", "Explain what to look for.", 1, 1, 1], ["H", "Invite them with a special.", 2, 0, 2]] }
+    ]
+  };
+
+  var TRAITS = ["Hook", "Heart", "Speed"];
+  var STRONG = ["Your openings stop the scroll.", "People feel something when you post.", "You publish while others are still planning."];
+  var TIP = ["Next video: open with your best line before you show anything else.", "Next video: put one real face or pair of hands in the first half.", "Next video: film it in one take and use your Order as the checklist."];
+
+  var state = { role: null, qs: [], qi: 0, answers: [], type: null, bars: [60, 60, 60], points: 0 };
+  try { var saved = parseInt(localStorage.getItem("rr_points"), 10); if (!isNaN(saved)) state.points = saved; } catch (e) {}
+
+  function $(id) { return document.getElementById(id); }
+  function show(id) {
+    ["intro", "role", "quiz", "result"].forEach(function (s) { $(s).classList.toggle("active", s === id); });
+    window.scrollTo(0, 0);
+  }
+  function savePoints() { try { localStorage.setItem("rr_points", String(state.points)); } catch (e) {} }
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove("on"); }, 2600);
+  }
+
+  /* ---------- Card as a single SVG (used on screen and for the saved image) ---------- */
+  function cardSVG(key, points, uid, barsPct) {
+    var t = TYPES[key], within = points % 5, maxed = points >= 25;
+    var vals = barsPct || t.sample;
+    var fillW = maxed ? 190 : Math.round(190 * within / 5);
+    var label = maxed ? "All Orders unlocked" : within + "/5 points to unlock Orders";
+    var bars = TRAITS.map(function (n, i) {
+      var y = 277 + i * 36;
+      return '<text x="40" y="' + (y - 6) + '" font-size="10" font-weight="700" fill="#fff">' + n + '</text>' +
+             '<rect x="40" y="' + y + '" width="220" height="10" rx="5" fill="#fff" opacity=".28"/>' +
+             '<rect x="40" y="' + y + '" width="' + Math.round(220 * vals[i] / 100) + '" height="10" rx="5" fill="' + AMBER + '"/>';
+    }).join("");
+    var star = points >= 10 ? '<path d="M52 66 Q52 78 64 78 Q52 78 52 90 Q52 78 40 78 Q52 78 52 66Z" fill="' + AMBER + '"/>' : "";
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 500" width="300" height="500" role="img" aria-label="Result card: ' + t.name + '. Your Order: ' + t.order + '.">' +
+      '<defs><linearGradient id="g' + uid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D81B55"/><stop offset="1" stop-color="#9E1243"/></linearGradient>' +
+      '<clipPath id="c' + uid + '"><circle cx="150" cy="140" r="60"/></clipPath></defs>' +
+      '<rect width="300" height="500" rx="30" fill="url(#g' + uid + ')"/>' +
+      '<rect x="40" y="22" width="220" height="28" rx="14" fill="#fff" opacity=".2"/>' +
+      '<text x="150" y="40.5" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="2" fill="#fff">YOUR REEL PERSONALITY</text>' +
+      '<circle cx="150" cy="140" r="78" fill="#fff" opacity=".16"/><circle cx="150" cy="140" r="60" fill="' + CREAM + '"/>' +
+      '<g clip-path="url(#c' + uid + ')"><path d="M94 212 Q94 160 150 160 Q206 160 206 212Z" fill="' + t.shirt + '"/>' +
+      '<rect x="141" y="138" width="18" height="26" rx="8" fill="' + SKIN + '"/><circle cx="150" cy="120" r="24" fill="' + SKIN + '"/>' +
+      '<path d="M126 120 Q124 90 150 90 Q176 90 174 120 Q164 104 150 104 Q136 104 126 120Z" fill="' + INK + '"/></g>' +
+      '<circle cx="208" cy="94" r="17" fill="' + AMBER + '"/><g transform="translate(208 94)">' + t.glyph + '</g>' + star +
+      '<g font-family="Helvetica, Arial, sans-serif">' +
+      '<text x="150" y="236" text-anchor="middle" font-size="' + (t.name.length > 20 ? 19 : 24) + '" font-weight="800" fill="#fff">' + t.name + '</text>' +
+      '<text x="150" y="255" text-anchor="middle" font-size="10.5" fill="#fff" opacity=".92">' + t.tag + '</text>' +
+      bars +
+      '<rect x="40" y="384" width="220" height="32" rx="16" fill="#fff"/>' +
+      '<text x="150" y="404.5" text-anchor="middle" font-size="12" font-weight="700" fill="' + PINK + '">Your Order: ' + t.order + '</text>' +
+      '<text x="40" y="440" font-size="10" font-weight="700" fill="#fff">' + label + '</text>' +
+      '<rect x="40" y="448" width="190" height="10" rx="5" fill="#fff" opacity=".28"/>' +
+      '<rect x="40" y="448" width="' + fillW + '" height="10" rx="5" fill="' + AMBER + '"/>' +
+      (maxed ? '<path d="M247 446 V442 a6 6 0 0 1 11 -3" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>' : '<path d="M247 446 V442 a6 6 0 0 1 12 0 V446" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>') +
+      '<rect x="244" y="446" width="18" height="14" rx="3" fill="#fff"/>' +
+      '<text x="150" y="486" text-anchor="middle" font-size="10" fill="#fff">Made with Vmake · #VmakeXmeitu</text>' +
+      '</g></svg>';
+  }
+
+  /* ---------- Role and quiz flow ---------- */
+  function renderRoles() {
+    var box = $("roles"); box.innerHTML = "";
+    Object.keys(ROLES).forEach(function (k) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "opt";
+      b.innerHTML = "<b></b><br><span style=\"color:var(--muted);font-size:16px\"></span>";
+      b.querySelector("b").textContent = ROLES[k].label;
+      b.querySelector("span").textContent = ROLES[k].desc;
+      b.addEventListener("click", function () { begin(k); });
+      box.appendChild(b);
+    });
+  }
+  function begin(role) {
+    state.role = role; state.qi = 0; state.answers = [];
+    var specific = shuffle(POOLS[role]).slice(0, 3), general = shuffle(POOLS.general).slice(0, 2);
+    state.qs = shuffle(specific.concat(general));
+    show("quiz"); renderQuestion();
+  }
+  function renderQuestion() {
+    var q = state.qs[state.qi];
+    $("progText").textContent = "Question " + (state.qi + 1) + " of " + state.qs.length;
+    $("progFill").style.width = (state.qi / state.qs.length * 100) + "%";
+    $("qText").textContent = q.q;
+    var box = $("opts"); box.innerHTML = "";
+    shuffle(q.o).forEach(function (opt) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "opt"; b.textContent = opt[1];
+      b.addEventListener("click", function () { answer(opt); });
+      box.appendChild(b);
+    });
+    var first = box.querySelector("button"); if (first) first.focus({ preventScroll: true });
+  }
+  function answer(opt) {
+    state.answers.push({ t: opt[0], h: opt[2], he: opt[3], s: opt[4] });
+    state.qi++;
+    if (state.qi >= state.qs.length) { finish(); } else { renderQuestion(); }
+  }
+  function finish() {
+    var score = {}, trait = {}, first = {}, sums = [0, 0, 0];
+    state.answers.forEach(function (a, i) {
+      score[a.t] = (score[a.t] || 0) + 1;
+      trait[a.t] = (trait[a.t] || 0) + a.h + a.he + a.s;
+      if (first[a.t] === undefined) first[a.t] = i;
+      sums[0] += a.h; sums[1] += a.he; sums[2] += a.s;
+    });
+    var keys = Object.keys(score).sort(function (x, y) {
+      return (score[y] - score[x]) || (trait[y] - trait[x]) || (first[x] - first[y]);
+    });
+    state.type = keys[0];
+    state.bars = sums.map(function (v) { return Math.round(25 + 75 * Math.min(1, v / 8)); });
+    state.fbDone = false;
+    show("result");
+    renderResult(true);
+  }
+
+  /* ---------- Result ---------- */
+  function unlockedKeys() {
+    var seq = [state.type].concat(ORDER_KEYS.filter(function (k) { return k !== state.type; }));
+    var n = Math.min(6, 1 + Math.floor(state.points / 5));
+    return { seq: seq, n: n };
+  }
+  function renderResult(animate) {
+    var host = $("cardHost");
+    host.innerHTML = cardSVG(state.type, state.points, "x", state.bars);
+    var svg = host.querySelector("svg");
+    if (animate && svg) { svg.classList.add("reveal"); }
+    var u = unlockedKeys();
+    var list = $("orders"); list.innerHTML = "";
+    u.seq.forEach(function (k, i) {
+      var on = i < u.n, li = document.createElement("li");
+      li.className = "order" + (on ? "" : " locked");
+      li.innerHTML = '<div class="dot" aria-hidden="true">' + (on ? "&#10003;" : "&#128274;") + '</div><div><b></b><span></span></div>';
+      li.querySelector("b").textContent = TYPES[k].order;
+      li.querySelector("span").textContent = on ? (i === 0 ? "Yours from the quiz" : "Unlocked") : "Locked. Earn " + (i * 5) + " points.";
+      list.appendChild(li);
+    });
+    var t = TYPES[state.type], r = state.role;
+    var hi = 0, lo = 0;
+    state.bars.forEach(function (v, i) { if (v > state.bars[hi]) hi = i; });
+    state.bars.forEach(function (v, i) { if (v < state.bars[lo]) lo = i; });
+    if (lo === hi) lo = (hi + 1) % 3;
+    $("insightStrong").textContent = "Strongest: " + TRAITS[hi] + ". " + STRONG[hi];
+    $("insightTip").textContent = "Room to grow: " + TRAITS[lo] + ". " + TIP[lo];
+    $("shotsTitle").textContent = "Your first video: " + t.order;
+    $("shotsSub").textContent = "Film it in about 30 seconds, in three shots. Made for: " + ROLES[r].label.toLowerCase() + ".";
+    var ol = $("shots"); ol.innerHTML = "";
+    ["Hook (first 5 seconds): " + t.hook, "Middle (next 17 seconds): " + t.mid[r], "Close (last 8 seconds): " + ROLES[r].close].forEach(function (s) { var li = document.createElement("li"); li.textContent = s; ol.appendChild(li); });
+    var p = state.points, maxed = p >= 25, within = p % 5;
+    $("ptsNum").textContent = p;
+    $("ptsNote").textContent = p === 1 ? "point" : "points";
+    $("meterFill").style.width = (maxed ? 100 : within / 5 * 100) + "%";
+    $("meterText").textContent = maxed ? "Every Order is unlocked." : (5 - within) + " more " + (5 - within === 1 ? "point" : "points") + " to unlock “" + TYPES[u.seq[Math.min(u.n, 5)]].order + "”.";
+    $("badge").classList.toggle("on", p >= 10);
+    $("pointsMini").textContent = p + (p === 1 ? " point" : " points");
+    renderFeedback();
+  }
+  function addPoints(n, why) {
+    var before = unlockedKeys().n;
+    state.points += n; savePoints();
+    var after = unlockedKeys();
+    renderResult(false);
+    if (after.n > before) { toast("New Order unlocked: " + TYPES[after.seq[after.n - 1]].order); }
+    else { toast("+" + n + " " + (n === 1 ? "point" : "points") + " for " + why); }
+  }
+
+  /* ---------- Feedback tally (stays on this device) ---------- */
+  function loadFb() { try { return JSON.parse(localStorage.getItem("rr_fb") || "[]"); } catch (e) { return []; } }
+  function saveFb(a) { try { localStorage.setItem("rr_fb", JSON.stringify(a)); } catch (e) {} }
+  function tally() {
+    var a = loadFb(), c = { yes: 0, mostly: 0, no: 0 };
+    a.forEach(function (x) { if (c[x.v] !== undefined) c[x.v]++; });
+    return { a: a, c: c };
+  }
+  function renderFeedback() {
+    var tl = tally(), n = tl.a.length;
+    var btns = document.querySelectorAll(".fb");
+    for (var i = 0; i < btns.length; i++) { btns[i].setAttribute("aria-pressed", state.fbDone === btns[i].getAttribute("data-v") ? "true" : "false"); }
+    $("fbRow").style.display = n ? "flex" : "none";
+    $("fbOut").textContent = n ? ("On this device: " + n + (n === 1 ? " person" : " people") + " answered. " + tl.c.yes + " yes, " + tl.c.mostly + " mostly, " + tl.c.no + " not really.") : "No answers yet. Hand the phone to a friend and ask them to tap one.";
+  }
+  function summary() {
+    var tl = tally(), n = tl.a.length, byType = {}, byRole = {};
+    tl.a.forEach(function (x) { byType[TYPES[x.t].name] = (byType[TYPES[x.t].name] || 0) + 1; byRole[ROLES[x.r].label] = (byRole[ROLES[x.r].label] || 0) + 1; });
+    var list = function (o) { return Object.keys(o).map(function (k) { return k + " " + o[k]; }).join(", "); };
+    var match = n ? Math.round((tl.c.yes + tl.c.mostly) / n * 100) : 0;
+    return "Reel personality quiz, pilot notes. " + n + " people tried it. Sounds like me: " + tl.c.yes + " yes, " + tl.c.mostly + " mostly, " + tl.c.no + " not really (" + match + "% yes or mostly). Types: " + list(byType) + ". Businesses: " + list(byRole) + ".";
+  }
+  var fbBtns = document.querySelectorAll(".fb");
+  for (var fi = 0; fi < fbBtns.length; fi++) {
+    fbBtns[fi].addEventListener("click", function (e) {
+      if (state.fbDone) { toast("Thanks, you already answered for this result."); return; }
+      var v = e.currentTarget.getAttribute("data-v");
+      var a = loadFb(); a.push({ v: v, t: state.type, r: state.role }); saveFb(a);
+      state.fbDone = v; renderFeedback(); toast("Thanks, that helps tune the quiz.");
+    });
+  }
+  $("fbCopy").addEventListener("click", function () {
+    var text = summary();
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(function () { toast("Summary copied."); }, function () { toast(text); }); }
+    else { toast(text); }
+  });
+  $("fbClear").addEventListener("click", function () { saveFb([]); state.fbDone = false; renderFeedback(); toast("Tally cleared."); });
+
+  /* ---------- Share and save ---------- */
+  function svgToBlob(svg, w, h, cb) {
+    var img = new Image();
+    var url = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    img.onload = function () {
+      var c = document.createElement("canvas"); c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      try { c.toBlob(function (b) { cb(b); }, "image/png"); } catch (e) { cb(null); }
+    };
+    img.onerror = function () { cb(null); };
+    img.src = url;
+  }
+  function cardBlob(cb) { svgToBlob(cardSVG(state.type, state.points, "dl", state.bars), 900, 1500, cb); }
+  /* 9:16 story image: the card sits inside the safe area, away from the top and bottom bars */
+  function storyBlob(cb) {
+    var card = cardSVG(state.type, state.points, "st", state.bars)
+      .replace('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 500" width="300" height="500"', '<svg x="150" y="310" viewBox="0 0 300 500" width="780" height="1300"');
+    var sp = function (x, y, r, o) { return '<path d="M' + x + ' ' + (y - r) + ' Q' + x + ' ' + y + ' ' + (x + r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y + r) + ' Q' + x + ' ' + y + ' ' + (x - r) + ' ' + y + ' Q' + x + ' ' + y + ' ' + x + ' ' + (y - r) + 'Z" fill="#fff" opacity="' + o + '"/>'; };
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" width="1080" height="1920">' +
+      '<defs><linearGradient id="sbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A1B3E"/><stop offset="1" stop-color="#1F1226"/></linearGradient></defs>' +
+      '<rect width="1080" height="1920" fill="url(#sbg)"/>' +
+      sp(110, 330, 34, .55) + sp(980, 520, 26, .45) + sp(90, 1500, 22, .4) + sp(990, 1720, 36, .55) + sp(540, 250, 18, .35) +
+      card + '</svg>';
+    svgToBlob(svg, 1080, 1920, cb);
+  }
+  function shareText() {
+    var t = TYPES[state.type];
+    return "I’m " + t.name + ". My Order: " + t.order + ". What did you get? Made with Vmake #VmakeXmeitu";
+  }
+  /* Show the image on screen so it can always be saved with a long press, even where downloads or sharing are blocked */
+  function showImage(blob, name, msg) {
+    var fr = new FileReader();
+    fr.onload = function () {
+      $("ovImg").src = fr.result;
+      $("ovSave").href = fr.result; $("ovSave").setAttribute("download", name);
+      $("ovMsg").textContent = msg;
+      $("ov").classList.add("on"); $("ovClose").focus();
+    };
+    fr.readAsDataURL(blob);
+  }
+  function closeOv() { $("ov").classList.remove("on"); }
+  $("ovClose").addEventListener("click", closeOv);
+  $("ov").addEventListener("click", function (e) { if (e.target === $("ov")) closeOv(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeOv(); });
+  function tryDownload(blob, name) {
+    try { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); } catch (e) {}
+  }
+  function copyText(text) {
+    try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(function () {}, function () {}); } } catch (e) {}
+  }
+  function shareFile(b, name, text, done, fallback) {
+    try {
+      if (b && navigator.canShare && navigator.share) {
+        var f = new File([b], name, { type: "image/png" });
+        if (navigator.canShare({ files: [f] })) {
+          navigator.share({ files: [f], text: text }).then(done).catch(function (err) { if (err && err.name === "AbortError") { return; } fallback(); });
+          return;
+        }
+      }
+    } catch (e) {}
+    fallback();
+  }
+  $("dlBtn").addEventListener("click", function () {
+    cardBlob(function (b) {
+      if (!b) { toast("Couldn’t build the image here. Try a screenshot instead."); return; }
+      tryDownload(b, "my-reel-personality.png");
+      showImage(b, "my-reel-personality.png", "If nothing downloaded, press and hold the image (or right-click it) to save it.");
+    });
+  });
+  $("shareBtn").addEventListener("click", function () {
+    var text = shareText();
+    cardBlob(function (b) {
+      if (!b) { toast("Couldn’t build the image here. Try a screenshot instead."); return; }
+      var done = function () { addPoints(1, "sharing your card"); };
+      shareFile(b, "my-reel-personality.png", text, done, function () {
+        copyText(text);
+        showImage(b, "my-reel-personality.png", "Your caption was copied. Press and hold the image (or right-click it) to save it, then post both.");
+        done();
+      });
+    });
+  });
+  $("storyBtn").addEventListener("click", function () {
+    var text = shareText();
+    storyBlob(function (b) {
+      if (!b) { toast("Couldn’t build the story image here. Try “Save as image” instead."); return; }
+      var done = function () { addPoints(1, "adding it to your story"); };
+      shareFile(b, "my-reel-personality-story.png", text, done, function () {
+        tryDownload(b, "my-reel-personality-story.png");
+        copyText(text);
+        showImage(b, "my-reel-personality-story.png", "Press and hold the image (or right-click it) to save it, then add it to your Instagram story. Your caption was copied.");
+        done();
+      });
+    });
+  });
+  $("proBtn").addEventListener("click", function () { toast("Concept only: in the real app this would open Vmake’s usual upgrade screen. No payment happens here."); });
+  $("friendBtn").addEventListener("click", function () { addPoints(3, "a friend’s first video"); });
+  $("resetBtn").addEventListener("click", function () { state.points = 0; savePoints(); renderResult(false); toast("Points reset."); });
+  $("retakeBtn").addEventListener("click", function () { begin(state.role); });
+  $("roleBtn").addEventListener("click", function () { show("role"); });
+  $("startBtn").addEventListener("click", function () { renderRoles(); show("role"); });
+
+  /* ---------- Intro peek: three sample cards ---------- */
+  $("peek").innerHTML = ["S", "H", "T"].map(function (k, i) { return cardSVG(k, 0, "p" + i); }).join("");
+  $("pointsMini").textContent = state.points ? state.points + (state.points === 1 ? " point" : " points") : "";
+})();
+</script>
+</body>
+</html>
